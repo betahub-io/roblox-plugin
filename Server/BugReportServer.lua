@@ -7,13 +7,18 @@ local HttpService = game:GetService("HttpService")
 local function onBugReportSubmit(player, issue, steps, logs)
     print("Received bug report from:", player.Name)
     
+    local projectId = HttpService:GetSecret("BH_PROJECT_ID")
+    local authToken = HttpService:GetSecret("BH_AUTH_TOKEN")
+    
     local success, message = BugReportLogic.processBugReport(
         player, 
         issue, 
         steps, 
         logs, 
         HttpService, 
-        remoteEvent
+        remoteEvent,
+        projectId,
+        authToken
     )
     
     if success then

@@ -117,14 +117,16 @@ describe("BugReportLogic", function()
         it("should create proper HTTP request structure", function()
             local mockHttpService = MockHttpService:new()
             local data = { test = "data" }
+            local testProjectId = "pr-test-project"
+            local testAuthToken = "FormUser test-token-12345"
             
-            local request = BugReportLogic.createHttpRequest(data, mockHttpService)
+            local request = BugReportLogic.createHttpRequest(data, mockHttpService, testProjectId, testAuthToken)
             
-            assert.equals("https://app.betahub.io/projects/pr-6790810205/issues", request.Url)
+            assert.equals("https://app.betahub.io/projects/pr-test-project/issues", request.Url)
             assert.equals("POST", request.Method)
             assert.equals("application/json", request.Headers["Content-Type"])
             assert.equals("application/json", request.Headers["Accept"])
-            assert.is_not_nil(request.Headers["Authorization"])
+            assert.equals("FormUser test-token-12345", request.Headers["Authorization"])
             assert.is_not_nil(request.Body)
         end)
     end)
@@ -171,6 +173,9 @@ describe("BugReportLogic", function()
             mockRemoteEvent = MockRemoteEvent:new()
         end)
         
+        local testProjectId = "pr-test-project"
+        local testAuthToken = "FormUser test-token-12345"
+        
         it("should reject invalid issue description", function()
             local success, message = BugReportLogic.processBugReport(
                 mockPlayer, 
@@ -178,7 +183,9 @@ describe("BugReportLogic", function()
                 "Steps to reproduce",
                 {},
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             assert.is_false(success)
@@ -204,7 +211,9 @@ describe("BugReportLogic", function()
                     }
                 },
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             assert.is_true(success)
@@ -225,7 +234,9 @@ describe("BugReportLogic", function()
                 "Steps to reproduce",
                 {},
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             assert.is_false(success)

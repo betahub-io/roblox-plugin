@@ -45,6 +45,10 @@ local function main()
     end
     print("")
     
+    -- Get credentials from environment variables or use fallbacks
+    local projectId = os.getenv("BH_PROJECT_ID") or "pr-6790810205"
+    local authToken = os.getenv("BH_AUTH_TOKEN") or "FormUser tkn-1b36c81e73cfe0281b24ec860d262908cf9ffdba804b985164016fbe84b72fab"
+    
     -- Create services and mocks
     local httpService = RealHttpService:new()
     local player = CliMocks.createPlayer("CLIUser")
@@ -56,7 +60,9 @@ local function main()
         description,
         steps,
         httpService,
-        remoteEvent
+        remoteEvent,
+        projectId,
+        authToken
     )
     
     -- Print final result

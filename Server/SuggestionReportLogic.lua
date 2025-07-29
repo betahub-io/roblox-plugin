@@ -1,8 +1,6 @@
 -- This is a ModuleScript to SuggestionReportServer.lua
 local SuggestionReportLogic = {}
 
-local API_URL = "https://app.betahub.io/projects/pr-6790810205/feature_requests"
-local AUTH_TOKEN = "FormUser tkn-1b36c81e73cfe0281b24ec860d262908cf9ffdba804b985164016fbe84b72fab"
 
 function SuggestionReportLogic.validateSuggestionDescription(description)
     if not description or type(description) ~= "string" then
@@ -25,17 +23,18 @@ function SuggestionReportLogic.createRequestData(description, steps)
     }
 end
 
-function SuggestionReportLogic.createHttpRequest(data, httpService)
+function SuggestionReportLogic.createHttpRequest(data, httpService, projectId, authToken)
     local jsonData = httpService:JSONEncode(data)
+    local apiUrl = "https://app.betahub.io/projects/" .. projectId .. "/feature_requests"
     
     local headers = {
-        ["Authorization"] = AUTH_TOKEN,
+        ["Authorization"] = authToken,
         ["Accept"] = "application/json",
         ["Content-Type"] = "application/json"
     }
     
     return {
-        Url = API_URL,
+        Url = apiUrl,
         Method = "POST",
         Headers = headers,
         Body = jsonData
@@ -57,7 +56,7 @@ function SuggestionReportLogic.parseErrorResponse(response, httpService)
     return errorMessage
 end
 
-function SuggestionReportLogic.processSuggestionReport(player, description, steps, httpService, remoteEvent)
+function SuggestionReportLogic.processSuggestionReport(player, description, steps, httpService, remoteEvent, projectId, authToken)
     -- Validate input
     local isValid, validationError = SuggestionReportLogic.validateSuggestionDescription(description)
     if not isValid then
@@ -67,7 +66,7 @@ function SuggestionReportLogic.processSuggestionReport(player, description, step
     
     -- Create request data
     local data = SuggestionReportLogic.createRequestData(description, steps)
-    local requestOptions = SuggestionReportLogic.createHttpRequest(data, httpService)
+    local requestOptions = SuggestionReportLogic.createHttpRequest(data, httpService, projectId, authToken)
     
     -- Make HTTP request
     local response = httpService:RequestAsync(requestOptions)

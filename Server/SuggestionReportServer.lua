@@ -7,12 +7,17 @@ local HttpService = game:GetService("HttpService")
 local function onSuggestionReportSubmit(player, description, steps)
     print("Received suggestion report from:", player.Name)
     
+    local projectId = HttpService:GetSecret("BH_PROJECT_ID")
+    local authToken = HttpService:GetSecret("BH_AUTH_TOKEN")
+    
     local success, message = SuggestionReportLogic.processSuggestionReport(
         player, 
         description, 
         steps, 
         HttpService, 
-        remoteEvent
+        remoteEvent,
+        projectId,
+        authToken
     )
     
     if success then

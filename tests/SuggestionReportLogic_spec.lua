@@ -82,15 +82,16 @@ describe("SuggestionReportLogic", function()
         it("should create proper HTTP request structure", function()
             local mockHttpService = MockHttpService:new()
             local data = { feature_request = { description = "test suggestion", unformatted_steps_to_reproduce = "test steps" } }
+            local testProjectId = "pr-test-project"
+            local testAuthToken = "FormUser test-token-12345"
             
-            local request = SuggestionReportLogic.createHttpRequest(data, mockHttpService)
+            local request = SuggestionReportLogic.createHttpRequest(data, mockHttpService, testProjectId, testAuthToken)
             
-            assert.equals("https://app.betahub.io/projects/pr-6790810205/feature_requests", request.Url)
+            assert.equals("https://app.betahub.io/projects/pr-test-project/feature_requests", request.Url)
             assert.equals("POST", request.Method)
             assert.equals("application/json", request.Headers["Content-Type"])
             assert.equals("application/json", request.Headers["Accept"])
-            assert.is_not_nil(request.Headers["Authorization"])
-            assert.matches("FormUser tkn%-", request.Headers["Authorization"])
+            assert.equals("FormUser test-token-12345", request.Headers["Authorization"])
             assert.is_not_nil(request.Body)
         end)
         
@@ -99,8 +100,10 @@ describe("SuggestionReportLogic", function()
             local testDescription = "Test suggestion with proper length requirements to meet the minimum validation criteria"
             local testSteps = "Test steps for reproduction"
             local data = SuggestionReportLogic.createRequestData(testDescription, testSteps)
+            local testProjectId = "pr-test-project"
+            local testAuthToken = "FormUser test-token-12345"
             
-            local request = SuggestionReportLogic.createHttpRequest(data, mockHttpService)
+            local request = SuggestionReportLogic.createHttpRequest(data, mockHttpService, testProjectId, testAuthToken)
             
             -- Decode the JSON body to verify it contains our data
             local decodedBody = mockHttpService:JSONDecode(request.Body)
@@ -161,13 +164,18 @@ describe("SuggestionReportLogic", function()
             mockRemoteEvent = MockRemoteEvent:new()
         end)
         
+        local testProjectId = "pr-test-project"
+        local testAuthToken = "FormUser test-token-12345"
+        
         it("should reject invalid suggestion description", function()
             local success, message = SuggestionReportLogic.processSuggestionReport(
                 mockPlayer, 
                 "Too short for suggestion", -- invalid description (less than 80 chars)
                 "Steps to implement the suggestion",
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             assert.is_false(success)
@@ -187,7 +195,9 @@ describe("SuggestionReportLogic", function()
                 "This is a comprehensive and valid suggestion description that definitely meets all the minimum character requirements for feature request submissions in the system",
                 "Step 1: Implement the new feature\nStep 2: Test the functionality\nStep 3: Deploy to users",
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             assert.is_true(success)
@@ -207,7 +217,9 @@ describe("SuggestionReportLogic", function()
                 "This is a valid suggestion description that meets all minimum length requirements but will trigger a server error response",
                 "Implementation steps for the suggestion",
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             assert.is_false(success)
@@ -229,7 +241,9 @@ describe("SuggestionReportLogic", function()
                 "This is another valid suggestion description that meets all the minimum length requirements for submission but will receive server error",
                 "Steps to reproduce or implement the suggestion",
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             assert.is_false(success)
@@ -248,7 +262,9 @@ describe("SuggestionReportLogic", function()
                 "This is a valid suggestion description that meets all length requirements and should be submitted successfully without reproduction steps",
                 nil, -- nil steps
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             assert.is_true(success)
@@ -269,7 +285,9 @@ describe("SuggestionReportLogic", function()
                 testDescription,
                 testSteps,
                 mockHttpService,
-                mockRemoteEvent
+                mockRemoteEvent,
+                testProjectId,
+                testAuthToken
             )
             
             -- Verify the request was made with proper structure

@@ -1,8 +1,6 @@
 -- This is a ModuleScript to BugReportServer.lua
 local BugReportLogic = {}
 
-local API_URL = "https://app.betahub.io/projects/pr-6790810205/issues"
-local AUTH_TOKEN = "FormUser tkn-1b36c81e73cfe0281b24ec860d262908cf9ffdba804b985164016fbe84b72fab"
 
 function BugReportLogic.validateIssueDescription(issue)
     if not issue or type(issue) ~= "string" then
@@ -45,17 +43,18 @@ function BugReportLogic.createRequestData(issue, steps, logs)
     }
 end
 
-function BugReportLogic.createHttpRequest(data, httpService)
+function BugReportLogic.createHttpRequest(data, httpService, projectId, authToken)
     local jsonData = httpService:JSONEncode(data)
+    local apiUrl = "https://app.betahub.io/projects/" .. projectId .. "/issues"
     
     local headers = {
-        ["Authorization"] = AUTH_TOKEN,
+        ["Authorization"] = authToken,
         ["Accept"] = "application/json",
         ["Content-Type"] = "application/json"
     }
     
     return {
-        Url = API_URL,
+        Url = apiUrl,
         Method = "POST",
         Headers = headers,
         Body = jsonData
@@ -77,7 +76,7 @@ function BugReportLogic.parseErrorResponse(response, httpService)
     return errorMessage
 end
 
-function BugReportLogic.processBugReport(player, issue, steps, logs, httpService, remoteEvent)
+function BugReportLogic.processBugReport(player, issue, steps, logs, httpService, remoteEvent, projectId, authToken)
     -- Validate input
     local isValid, validationError = BugReportLogic.validateIssueDescription(issue)
     if not isValid then
@@ -87,7 +86,7 @@ function BugReportLogic.processBugReport(player, issue, steps, logs, httpService
     
     -- Create request data
     local data = BugReportLogic.createRequestData(issue, steps, logs)
-    local requestOptions = BugReportLogic.createHttpRequest(data, httpService)
+    local requestOptions = BugReportLogic.createHttpRequest(data, httpService, projectId, authToken)
     
     -- Make HTTP request
     local response = httpService:RequestAsync(requestOptions)
