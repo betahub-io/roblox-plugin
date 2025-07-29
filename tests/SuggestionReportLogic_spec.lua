@@ -5,6 +5,7 @@ local SuggestionReportLogic = require("Server.SuggestionReportLogic")
 local MockHttpService = require("MockHttpService")
 local MockRemoteEvent = require("MockRemoteEvent")
 local MockPlayer = require("MockPlayer")
+local MockSecret = require("MockSecret")
 
 describe("SuggestionReportLogic", function()
     
@@ -83,7 +84,7 @@ describe("SuggestionReportLogic", function()
             local mockHttpService = MockHttpService:new()
             local data = { feature_request = { description = "test suggestion", unformatted_steps_to_reproduce = "test steps" } }
             local testProjectId = "pr-test-project"
-            local testAuthToken = "FormUser test-token-12345"
+            local testAuthToken = "test-token-12345"
             
             local request = SuggestionReportLogic.createHttpRequest(data, mockHttpService, testProjectId, testAuthToken)
             
@@ -101,7 +102,7 @@ describe("SuggestionReportLogic", function()
             local testSteps = "Test steps for reproduction"
             local data = SuggestionReportLogic.createRequestData(testDescription, testSteps)
             local testProjectId = "pr-test-project"
-            local testAuthToken = "FormUser test-token-12345"
+            local testAuthToken = "test-token-12345"
             
             local request = SuggestionReportLogic.createHttpRequest(data, mockHttpService, testProjectId, testAuthToken)
             
@@ -109,6 +110,24 @@ describe("SuggestionReportLogic", function()
             local decodedBody = mockHttpService:JSONDecode(request.Body)
             assert.equals(testDescription, decodedBody.feature_request.description)
             assert.equals(testSteps, decodedBody.feature_request.unformatted_steps_to_reproduce)
+        end)
+        
+        it("should handle Secret objects by using AddPrefix/AddSuffix methods", function()
+            local mockHttpService = MockHttpService:new()
+            local data = { feature_request = { description = "test suggestion", unformatted_steps_to_reproduce = "test steps" } }
+            local secretProjectId = MockSecret:new("pr-secret-project")
+            local secretAuthToken = MockSecret:new("secret-token-67890")
+            
+            local request = SuggestionReportLogic.createHttpRequest(data, mockHttpService, secretProjectId, secretAuthToken)
+            
+            -- URL should be a Secret object with the expected value
+            assert.equals("https://app.betahub.io/projects/pr-secret-project/feature_requests", request.Url:getValue())
+            assert.equals("POST", request.Method)
+            assert.equals("application/json", request.Headers["Content-Type"])
+            assert.equals("application/json", request.Headers["Accept"])
+            -- Authorization should be the Secret object directly
+            assert.equals("FormUser secret-token-67890", request.Headers["Authorization"]:getValue())
+            assert.is_not_nil(request.Body)
         end)
     end)
     
@@ -165,7 +184,7 @@ describe("SuggestionReportLogic", function()
         end)
         
         local testProjectId = "pr-test-project"
-        local testAuthToken = "FormUser test-token-12345"
+        local testAuthToken = "test-token-12345"
         
         it("should reject invalid suggestion description", function()
             local success, message = SuggestionReportLogic.processSuggestionReport(

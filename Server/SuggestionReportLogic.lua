@@ -25,10 +25,26 @@ end
 
 function SuggestionReportLogic.createHttpRequest(data, httpService, projectId, authToken)
     local jsonData = httpService:JSONEncode(data)
-    local apiUrl = "https://app.betahub.io/projects/" .. projectId .. "/feature_requests"
+    
+    local apiUrl
+    if type(projectId) == "string" then
+        apiUrl = "https://app.betahub.io/projects/" .. projectId .. "/feature_requests"
+    else
+        -- In real Roblox, Secret objects work directly in URLs for RequestAsync
+        apiUrl = projectId:AddPrefix("https://app.betahub.io/projects/"):AddSuffix("/feature_requests")
+    end
+    
+    local authorization
+    if type(authToken) == "string" then
+        -- For string tokens, add FormUser prefix
+        authorization = "FormUser " .. authToken
+    else
+        -- For Secret objects, use AddPrefix method
+        authorization = authToken:AddPrefix("FormUser ")
+    end
     
     local headers = {
-        ["Authorization"] = authToken,
+        ["Authorization"] = authorization,
         ["Accept"] = "application/json",
         ["Content-Type"] = "application/json"
     }

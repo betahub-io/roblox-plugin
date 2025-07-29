@@ -5,6 +5,7 @@ local BugReportLogic = require("Server.BugReportLogic")
 local MockHttpService = require("MockHttpService")
 local MockRemoteEvent = require("MockRemoteEvent")
 local MockPlayer = require("MockPlayer")
+local MockSecret = require("MockSecret")
 
 describe("BugReportLogic", function()
     
@@ -118,7 +119,7 @@ describe("BugReportLogic", function()
             local mockHttpService = MockHttpService:new()
             local data = { test = "data" }
             local testProjectId = "pr-test-project"
-            local testAuthToken = "FormUser test-token-12345"
+            local testAuthToken = "test-token-12345"
             
             local request = BugReportLogic.createHttpRequest(data, mockHttpService, testProjectId, testAuthToken)
             
@@ -127,6 +128,24 @@ describe("BugReportLogic", function()
             assert.equals("application/json", request.Headers["Content-Type"])
             assert.equals("application/json", request.Headers["Accept"])
             assert.equals("FormUser test-token-12345", request.Headers["Authorization"])
+            assert.is_not_nil(request.Body)
+        end)
+        
+        it("should handle Secret objects by using AddPrefix/AddSuffix methods", function()
+            local mockHttpService = MockHttpService:new()
+            local data = { test = "data" }
+            local secretProjectId = MockSecret:new("pr-secret-project")
+            local secretAuthToken = MockSecret:new("secret-token-67890")
+            
+            local request = BugReportLogic.createHttpRequest(data, mockHttpService, secretProjectId, secretAuthToken)
+            
+            -- URL should be a Secret object with the expected value
+            assert.equals("https://app.betahub.io/projects/pr-secret-project/issues", request.Url:getValue())
+            assert.equals("POST", request.Method)
+            assert.equals("application/json", request.Headers["Content-Type"])
+            assert.equals("application/json", request.Headers["Accept"])
+            -- Authorization should be the Secret object directly
+            assert.equals("FormUser secret-token-67890", request.Headers["Authorization"]:getValue())
             assert.is_not_nil(request.Body)
         end)
     end)
@@ -174,7 +193,7 @@ describe("BugReportLogic", function()
         end)
         
         local testProjectId = "pr-test-project"
-        local testAuthToken = "FormUser test-token-12345"
+        local testAuthToken = "test-token-12345"
         
         it("should reject invalid issue description", function()
             local success, message = BugReportLogic.processBugReport(
