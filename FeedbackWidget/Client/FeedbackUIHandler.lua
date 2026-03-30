@@ -1,18 +1,23 @@
 local Replicated = game:GetService("ReplicatedStorage")
 local LogService = game:GetService("LogService")
+local UserInputService = game:GetService("UserInputService")
 
 local Remote = Replicated:WaitForChild("BetahubFeedback")
 
-local logBuffer: {string} = {}
-local MAX_LOG_ENTRIES = 200
-
-LogService.MessageOut:Connect(function(message, messageType)
-	local entry = string.format("[%s] (%s): %s", os.date("%Y-%m-%d %H:%M:%S"), tostring(messageType), message)
-	table.insert(logBuffer, entry)
-	if #logBuffer > MAX_LOG_ENTRIES then
-		table.remove(logBuffer, 1)
+local function getClientLogs(): string
+	local ok, logHistory = pcall(function()
+		return LogService:GetLogHistory()
+	end)
+	if not ok or not logHistory or #logHistory == 0 then
+		return ""
 	end
-end)
+	local entries = {}
+	for _, entry in logHistory do
+		local ts = entry.timestamp and os.date("%Y-%m-%d %H:%M:%S", entry.timestamp) or "?"
+		table.insert(entries, string.format("[%s] (%s): %s", ts, tostring(entry.messageType), entry.message))
+	end
+	return table.concat(entries, "\n")
+end
 
 local selectedFeedBackType: string? = nil
 
@@ -39,6 +44,25 @@ local COLOR_UNMET = Color3.fromRGB(148, 155, 164)
 
 AutoTextBoxScaler(FeedbackInput.InputBox)
 AutoTextBoxScaler(StepsToRepro.InputBox)
+
+-- Tab to move from description to steps-to-reproduce
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if input.KeyCode == Enum.KeyCode.Tab then
+		if FeedbackInput.InputBox:IsFocused() and selectedFeedBackType == "Bug" then
+			-- Strip tab character and move focus
+			task.defer(function()
+				FeedbackInput.InputBox.Text = FeedbackInput.InputBox.Text:gsub("\t", "")
+				FeedbackInput.InputBox:ReleaseFocus()
+				StepsToRepro.InputBox:CaptureFocus()
+			end)
+		elseif StepsToRepro.InputBox:IsFocused() then
+			-- Strip tab from steps field too
+			task.defer(function()
+				StepsToRepro.InputBox.Text = StepsToRepro.InputBox.Text:gsub("\t", "")
+			end)
+		end
+	end
+end)
 
 ButtonColourer.AddButton(FeedbackType.Suggestion, "MainSelection")
 ButtonColourer.AddButton(FeedbackType.Bug, "MainSelection")
@@ -147,6 +171,7 @@ SubmitFeedback.Submit.MouseButton1Click:Connect(function()
 
 	disableSubmit()
 	SubmitFeedback.Submit.Text = "Submitting..."
+	SubmitFeedback.Cancel.Visible = false
 
 	local reportData = {
 		ReportingType = string.lower(selectedFeedBackType),
@@ -157,10 +182,12 @@ SubmitFeedback.Submit.MouseButton1Click:Connect(function()
 	}
 
 	if selectedFeedBackType == "Bug" then
-		reportData.Logs = table.concat(logBuffer, "\n")
+		reportData.Logs = getClientLogs()
 	end
 
 	local res, rateLimit, errorMsg = Remote:InvokeServer(reportData)
+
+	SubmitFeedback.Cancel.Visible = true
 
 	if rateLimit and rateLimit > 0 then
 		SubmitFeedback.Submit.Text = `Wait {rateLimit}s..`

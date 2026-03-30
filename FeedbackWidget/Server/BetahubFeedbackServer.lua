@@ -19,8 +19,36 @@ type RequestData = {
 local rateLimit : {[number]: number} = {}
 
 local HttpService = game:GetService("HttpService")
-local PROJECT_ID = HttpService:GetSecret("BH_PROJECT_ID")
-local AUTH_TOKEN = HttpService:GetSecret("BH_AUTH_TOKEN")
+local LogService = game:GetService("LogService")
+
+local PROJECT_ID, AUTH_TOKEN
+
+local okId, resultId = pcall(function() return HttpService:GetSecret("BH_PROJECT_ID") end)
+local okToken, resultToken = pcall(function() return HttpService:GetSecret("BH_AUTH_TOKEN") end)
+
+if okId and okToken then
+	PROJECT_ID = resultId
+	AUTH_TOKEN = resultToken
+else
+	warn("")
+	warn("========================================")
+	warn("  BETAHUB FEEDBACK - CONFIGURATION ERROR")
+	warn("========================================")
+	if not okId then
+		warn("  Missing secret: BH_PROJECT_ID")
+	end
+	if not okToken then
+		warn("  Missing secret: BH_AUTH_TOKEN")
+	end
+	warn("")
+	warn("  Go to File > Experience Settings > Security > Secrets")
+	warn("  and add both BH_PROJECT_ID and BH_AUTH_TOKEN.")
+	warn("")
+	warn("  Get these from your BetaHub project:")
+	warn("  Settings > Integrations > Auth Tokens")
+	warn("========================================")
+	warn("")
+end
 
 local ENDPOINT_MAP = {
 	["bug"] = "issues",
@@ -88,7 +116,7 @@ local function submitRequest(data: RequestData)
 	end
 end
 
-local function uploadLogs(issueId: number, jwtToken: string, logs: string)
+local function uploadLogs(issueId: number, jwtToken: string, logs: string, fileName: string)
 	local url
 	if type(PROJECT_ID) == "string" then
 		url = API_BASE_URL .. "/projects/" .. PROJECT_ID .. "/issues/g-" .. tostring(issueId) .. "/log_files.json"
@@ -106,7 +134,7 @@ local function uploadLogs(issueId: number, jwtToken: string, logs: string)
 
 	local postBody = urlEncode({
 		["log_file[contents]"] = logs,
-		["log_file[name]"] = "roblox_console.log"
+		["log_file[name]"] = fileName
 	})
 
 	local success, response = pcall(function()
@@ -181,11 +209,27 @@ Remote.OnServerInvoke = function(plr, data: Data)
 			["Body"] = bodyToSend
 		})
 
-		if res and responseData and data.Logs and data.Logs ~= "" then
+		if res and responseData then
 			local issueId = responseData.id
 			local jwtToken = responseData.token
 			if issueId and jwtToken then
-				uploadLogs(issueId, jwtToken, data.Logs)
+				-- Upload client logs
+				if data.Logs and data.Logs ~= "" then
+					uploadLogs(issueId, jwtToken, data.Logs, "roblox_client_console.log")
+				end
+
+				-- Upload server logs (best-effort, may be empty in production)
+				local ok, logHistory = pcall(function()
+					return LogService:GetLogHistory()
+				end)
+				if ok and logHistory and #logHistory > 0 then
+					local entries = {}
+					for _, entry in logHistory do
+						local ts = entry.timestamp and os.date("%Y-%m-%d %H:%M:%S", entry.timestamp) or "?"
+						table.insert(entries, string.format("[%s] (%s): %s", ts, tostring(entry.messageType), entry.message))
+					end
+					uploadLogs(issueId, jwtToken, table.concat(entries, "\n"), "roblox_server_console.log")
+				end
 			end
 		elseif not res then
 			errorMsg = responseData
