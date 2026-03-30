@@ -2,6 +2,10 @@
 
 An in-game feedback widget for Roblox games that lets players submit bug reports and feature suggestions to the BetaHub platform.
 
+| Suggestion Form | Bug Report Form |
+|:---:|:---:|
+| ![Suggestion Form](docs/images/suggestion-form.png) | ![Bug Report Form](docs/images/bug-report-form.png) |
+
 ## Features
 
 - **Unified UI**: Dark-themed feedback form with Bug/Suggestion toggle
