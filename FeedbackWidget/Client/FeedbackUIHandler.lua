@@ -49,14 +49,18 @@ AutoTextBoxScaler(StepsToRepro.InputBox)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if input.KeyCode == Enum.KeyCode.Tab then
 		if FeedbackInput.InputBox:IsFocused() and selectedFeedBackType == "Bug" then
-			-- Strip tab character and move focus
+			-- Strip tab character, move focus, then clean up the target field
 			task.defer(function()
 				FeedbackInput.InputBox.Text = FeedbackInput.InputBox.Text:gsub("\t", "")
 				FeedbackInput.InputBox:ReleaseFocus()
 				StepsToRepro.InputBox:CaptureFocus()
+				-- Wait a frame for the tab character to be inserted into the new field, then strip it
+				task.defer(function()
+					StepsToRepro.InputBox.Text = StepsToRepro.InputBox.Text:gsub("\t", "")
+				end)
 			end)
 		elseif StepsToRepro.InputBox:IsFocused() then
-			-- Strip tab from steps field too
+			-- Strip tab from steps field
 			task.defer(function()
 				StepsToRepro.InputBox.Text = StepsToRepro.InputBox.Text:gsub("\t", "")
 			end)

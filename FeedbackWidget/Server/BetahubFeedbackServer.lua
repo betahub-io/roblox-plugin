@@ -116,7 +116,7 @@ local function submitRequest(data: RequestData)
 	end
 end
 
-local function uploadLogs(issueId: number, jwtToken: string, logs: string, fileName: string)
+local function uploadLogs(issueId: number, jwtToken: string, logs: string, fileName: string, developerPrivate: boolean?)
 	local url
 	if type(PROJECT_ID) == "string" then
 		url = API_BASE_URL .. "/projects/" .. PROJECT_ID .. "/issues/g-" .. tostring(issueId) .. "/log_files.json"
@@ -132,10 +132,14 @@ local function uploadLogs(issueId: number, jwtToken: string, logs: string, fileN
 		return table.concat(chunks, "&")
 	end
 
-	local postBody = urlEncode({
+	local body = {
 		["log_file[contents]"] = logs,
 		["log_file[name]"] = fileName
-	})
+	}
+	if developerPrivate then
+		body["log_file[developer_private]"] = "true"
+	end
+	local postBody = urlEncode(body)
 
 	local success, response = pcall(function()
 		return HttpService:RequestAsync({
@@ -228,7 +232,7 @@ Remote.OnServerInvoke = function(plr, data: Data)
 						local ts = entry.timestamp and os.date("%Y-%m-%d %H:%M:%S", entry.timestamp) or "?"
 						table.insert(entries, string.format("[%s] (%s): %s", ts, tostring(entry.messageType), entry.message))
 					end
-					uploadLogs(issueId, jwtToken, table.concat(entries, "\n"), "roblox_server_console.log")
+					uploadLogs(issueId, jwtToken, table.concat(entries, "\n"), "roblox_server_console.log", true)
 				end
 			end
 		elseif not res then

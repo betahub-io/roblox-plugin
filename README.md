@@ -76,6 +76,11 @@ RATE_LIMIT = 20                      -- Seconds between submissions per player
 RESET_RATE_LIMIT_ON_FAILURE = false  -- Keep false to prevent spam on API errors
 ```
 
+## Known Limitations
+
+- **Log files may be empty on the first submission** in a play session. `LogService:GetLogHistory()` returns a snapshot of accumulated output — if nothing has been logged yet, the logs will be empty. Subsequent submissions in the same session will include logs.
+- **Server-side log capture is best-effort.** `LogService:GetLogHistory()` works reliably in Roblox Studio but may return empty in live production games due to Roblox engine restrictions.
+
 ## License
 
 Part of the BetaHub platform integration suite.
