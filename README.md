@@ -14,7 +14,9 @@ An in-game feedback widget for Roblox games that lets players submit bug reports
 - **Client-side validation**: Minimum character counts (50 for bugs, 80 for suggestions) with live feedback
 - **Server-side error display**: API rejection reasons shown to the player
 - **Rate limiting**: Configurable per-player cooldown
-- **Secure credentials**: Uses Roblox `HttpService:GetSecret()` for API tokens
+- **Secure credentials**: Uses Roblox `HttpService:GetSecret()` for API tokens (with clear error message if misconfigured)
+- **Tab navigation**: Tab key moves focus from description to steps-to-reproduce
+- **Dual log capture**: Both client and server console logs attached to bug reports (server logs marked developer-private)
 
 ## Project Structure
 
@@ -49,11 +51,12 @@ The `.rbxl` file contains the full widget including UI hierarchy. The `FeedbackW
 ## How It Works
 
 ### Bug Report Flow
-1. Player selects "Bug", fills in description (50 chars min) and steps to reproduce
-2. Client collects console logs from `LogService` (last 200 entries)
+1. Player selects "Bug", fills in description (50 chars min) and steps to reproduce (Tab navigates between fields)
+2. Client captures console log snapshot via `LogService:GetLogHistory()`
 3. Server POSTs to `POST /projects/{id}/issues.json` with description, steps, source, and roblox user ID
 4. Server parses response to get issue ID and JWT token
-5. Server uploads console logs to `POST /projects/{id}/issues/g-{issueId}/log_files.json`
+5. Server uploads client logs to `POST /projects/{id}/issues/g-{issueId}/log_files.json`
+6. Server uploads server logs (marked as developer-private, hidden from players)
 
 ### Suggestion Flow
 1. Player selects "Suggestion", fills in description (80 chars min)

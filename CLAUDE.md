@@ -34,7 +34,8 @@ ServerScriptService/
 ### Communication Pattern
 - Client uses `RemoteFunction:InvokeServer()` (not RemoteEvent)
 - Server returns `(success, rateLimit, errorMessage)` tuple
-- Bug reports include a second server-side request to upload console logs
+- Bug reports upload two log files: client console + server console (developer-private)
+- Logs captured via `LogService:GetLogHistory()` snapshot at submission time (not a rolling buffer)
 
 ## Development with Roblox Studio MCP
 
@@ -54,7 +55,7 @@ This project uses the Roblox Studio MCP server for direct Studio integration. Ke
 
 - **Bug reports**: `POST /projects/{id}/issues.json` (url-encoded form data)
 - **Suggestions**: `POST /projects/{id}/feature_requests.json` (url-encoded form data)
-- **Log upload**: `POST /projects/{id}/issues/g-{issueId}/log_files.json` using `log_file[contents]`
+- **Log upload**: `POST /projects/{id}/issues/g-{issueId}/log_files.json` using `log_file[contents]` and `log_file[developer_private]` for server logs
 - **Auth**: `FormUser {token}` header; log upload uses `FormUser {token},{jwt}`
 - **Custom fields**: Use `issue[custom][field_ident]` format (not `custom_fields`)
 - **Secrets**: `HttpService:GetSecret("BH_PROJECT_ID")` and `HttpService:GetSecret("BH_AUTH_TOKEN")`
@@ -64,5 +65,6 @@ This project uses the Roblox Studio MCP server for direct Studio integration. Ke
 - Bug description minimum: 50 characters
 - Suggestion description minimum: 80 characters
 - Rate limit: 20 seconds between submissions per player (configurable)
-- Console log buffer: last 200 entries
+- Console logs use `LogService:GetLogHistory()` snapshot (may be empty on first submission or in production)
 - Log upload is non-blocking (bug report succeeds even if log upload fails)
+- `GetSecret` failures show a clear warning in the console with setup instructions
