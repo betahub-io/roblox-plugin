@@ -1,6 +1,6 @@
 # BetaHub Roblox Feedback Widget
 
-An in-game feedback widget for Roblox games that lets players submit bug reports and feature suggestions to the BetaHub platform.
+An in-game feedback widget for Roblox games that lets players submit bug reports and feature suggestions to [BetaHub](https://betahub.io). See the [full integration guide](https://betahub.io/docs/permalinks/roblox-integration/) for detailed setup instructions.
 
 | Suggestion Form | Bug Report Form |
 |:---:|:---:|
@@ -86,4 +86,4 @@ RESET_RATE_LIMIT_ON_FAILURE = false  -- Keep false to prevent spam on API errors
 
 ## License
 
-Part of the BetaHub platform integration suite.
+Part of the [BetaHub](https://betahub.io) platform integration suite.
